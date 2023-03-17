@@ -187,11 +187,20 @@ export default function App() {
     <Layout>
       <div className="container mx-auto px-4 pb-10">
         <Header isConnected={isConnected}>
-          <div className="relay-url-container flex self-center after:bg-white dark:after:bg-slate-900 p-3 rounded-md after:rounded-md">
-            <span className="text-sm text-slate-900 dark:text-slate-50">
-              Relay URL:&nbsp;&nbsp;
-            </span>
-            <CopyText value={webSocketRelayUrl} />
+          <div className="flex flex-col space-y-2 justify-center">
+            <div className="relay-url-container shiny-border flex self-center after:bg-white dark:after:bg-slate-900 p-3 rounded-md after:rounded-md">
+              <span className="text-sm text-slate-900 dark:text-slate-50">
+                Relay URL:&nbsp;&nbsp;
+              </span>
+              <CopyText value={webSocketRelayUrl} />
+            </div>
+            <RelaySettingsModal
+              openBtn={
+                <button className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900 text-white text-sm h-11 px-3 rounded-md w-full flex items-center justify-center sm:w-auto dark:bg-violet-800 dark:highlight-white/20 dark:hover:bg-violet-600">
+                  Sync to Public Relays
+                </button>
+              }
+            />
           </div>
         </Header>
 
