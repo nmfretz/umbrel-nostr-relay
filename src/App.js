@@ -9,6 +9,9 @@ import CopyText from "./components/utility/CopyText";
 import ConnectClient from "./components/ConnectClient";
 import TotalBackups from "./components/TotalBackups";
 import LatestActions from "./components/LatestActions";
+import RelaySettingsModal from "./components/RelaySettingsModal";
+
+import { useSettingsStore } from "./services/store";
 
 // Event kinds that we want to render in the UI
 const supportedEventKinds = {
@@ -102,6 +105,8 @@ export default function App() {
   const [hasFetchedAllEvents, setHasFetchedAllEvents] = useState(false);
   // State to store the relay info as per NIP-11: https://github.com/nostr-protocol/nips/blob/master/11.md
   const [relayInformationDocument, setRelayInformationDocument] = useState({});
+
+  useSettingsStore.subscribe(console.log);
 
   useEffect(() => {
     // Create websocket connection
