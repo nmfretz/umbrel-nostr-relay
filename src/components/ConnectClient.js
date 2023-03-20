@@ -15,7 +15,7 @@ export default function ConnectClientCard({ relayPort }) {
       <p className="text-slate-800 dark:text-slate-400 text-sm mb-1">
         Tip: Install{" "}
         <a
-          href={`${window.location.protocol}//${window.location.hostname}/app-store/tailscale`}
+          href="/app-store/tailscale"
           target="_blank"
           className="underline underline-offset-2"
           rel="noreferrer"

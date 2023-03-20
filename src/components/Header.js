@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import icon from "../assets/icon.jpg";
+import icon from "@/assets/icon.jpg";
 
 export default function Header({ isConnected, children }) {
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function Header({ isConnected, children }) {
           <div className="flex items-center mr-6 w-32 h-32 rounded-2xl sm:rounded-3xl">
             <img
               className="object-cover rounded-2xl shadow-xl sm:rounded-3xl ring-1 ring-gray-900/5 dark:ring-white/10"
-              src={icon}
+              src={icon.src}
               alt="Nostr Relay Icon"
             />
           </div>
