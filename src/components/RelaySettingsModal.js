@@ -34,6 +34,10 @@ export default function RelaySettingsModal({ openBtn }) {
     setAddress(e.currentTarget.value);
   };
 
+  const handleCancel = () => {
+    setOpen(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -50,6 +54,7 @@ export default function RelaySettingsModal({ openBtn }) {
 
     if (isNip05Address) {
       const { localPart, domain } = decodeNip05(address);
+
       const metadata = await fetchNip05Metadata(localPart, domain);
 
       const npub = metadata.names[localPart];
@@ -64,7 +69,7 @@ export default function RelaySettingsModal({ openBtn }) {
         return;
       }
 
-      saveSettings({
+      await saveSettings({
         npub: npub,
         npubOrnip05Address: address,
         publicRelays: sanitizeRelays(metadata.relays[npub]),
@@ -111,11 +116,11 @@ export default function RelaySettingsModal({ openBtn }) {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="relative transform overflow-hidden col-1 md:col-span-2 xl:col-span-1 bg-white/60 dark:bg-white/5 backdrop-blur-2xl backdrop-saturate-150 pt-6 shadow-xl dark:shadow-gray-900 ring-1 ring-gray-900/5 dark:ring-white/10 rounded-xl bg-white text-left transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <Dialog.Panel className="relative transform overflow-hidden col-1 md:col-span-2 xl:col-span-1 bg-white/60 dark:bg-white/5 backdrop-blur-2xl backdrop-saturate-150 shadow-xl dark:shadow-gray-900 ring-1 ring-gray-900/5 dark:ring-white/10 rounded-xl bg-white text-left transition-all sm:my-8 sm:w-full sm:max-w-lg">
                   <form onSubmit={handleSubmit}>
                     <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                       <div className="sm:flex sm:items-start">
-                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left ">
+                        <div className="mt-3 text-center sm:mt-0 sm:text-left ">
                           <Dialog.Title
                             as="h3"
                             className="text-slate-700 dark:text-slate-50 text-xl font-semibold"
@@ -148,14 +153,14 @@ export default function RelaySettingsModal({ openBtn }) {
                     <div className="bg-white/60 dark:bg-white/5 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                       <button
                         type="submit"
-                        className="border border-violet-600/40 inline-flex w-full justify-center rounded-md dark:bg-violet-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                        className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:ml-3 sm:w-auto"
                       >
-                        Sync
+                        Sync to Relays
                       </button>
                       <button
                         type="button"
-                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                        onClick={() => setOpen(false)}
+                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 h-10 text-sm font-semibold text-gray-900 shadow-sm ring-1 items-center ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        onClick={handleCancel}
                         ref={cancelButtonRef}
                       >
                         Cancel

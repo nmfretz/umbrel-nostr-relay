@@ -147,7 +147,7 @@ const Home = () => {
             </div>
             <RelaySettingsModal
               openBtn={
-                <button className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900 text-white text-sm h-11 px-3 rounded-md w-full flex items-center justify-center sm:w-auto dark:bg-violet-800 dark:highlight-white/20 dark:hover:bg-violet-600">
+                <button className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center sm:w-auto dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800">
                   Sync to Public Relays
                 </button>
               }
