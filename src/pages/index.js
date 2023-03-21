@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import { uniqBy } from "remeda";
 
 import Layout from "@/components/Layout";
 import Header from "@/components/Header";
@@ -11,7 +12,8 @@ import TotalBackups from "@/components/TotalBackups";
 import LatestActions from "@/components/LatestActions";
 import RelaySettingsModal from "@/components/RelaySettingsModal";
 
-import { useRelays } from "@/services/nostr";
+import { useRelays } from "@/stores/relays";
+import { useLocation } from "@/utils/useLocation";
 import { relayPort } from "@/config";
 
 // Event kinds that we want to render in the UI
@@ -87,21 +89,25 @@ const supportedEventKinds = {
 // Total events we want to render in the activity list
 const eventsToRenderLimit = 300;
 
-let webSocketRelayUrl;
-
 const Home = () => {
+  const location = useLocation();
   const relays = useRelays();
-
-  // State to store events from websocket
-  const [events, setEvents] = useState([]);
-  // State to keep track of whether all stored events have been fetched
-  const [hasFetchedAllEvents, setHasFetchedAllEvents] = useState(false);
   // State to store the relay info as per NIP-11: https://github.com/nostr-protocol/nips/blob/master/11.md
   const [relayInformationDocument, setRelayInformationDocument] = useState({});
 
+  const webSocketProtocol = location?.protocol === "https:" ? "wss:" : "ws:";
+  const webSocketRelayUrl = location
+    ? `${webSocketProtocol}//${location.hostname}:${relayPort}`
+    : "";
+  const baseEvents = relays.map((relay) => relay.events).flat();
+  const events = uniqBy(baseEvents, (x) => x.id);
+  const hasFetchedAllEvents = relays.find((relay) => relay.hasFetchedAllEvents);
+
   useEffect(() => {
+    if (!location) return;
+
     // HTTP URL of the relay
-    const HttpRelayUrl = `${window.location.protocol}//${window.location.hostname}:${relayPort}`;
+    const HttpRelayUrl = `${location.protocol}//${location.hostname}:${relayPort}`;
 
     // get nostr-rs-relay version
     fetch(HttpRelayUrl, {
@@ -115,7 +121,7 @@ const Home = () => {
         setRelayInformationDocument(relayInfoDoc);
       }
     });
-  }, []);
+  }, [location]);
 
   return (
     <Layout>
