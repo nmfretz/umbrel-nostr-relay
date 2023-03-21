@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import fs from "fs";
 
-const filePath = "tmp/settings.json";
+const filePath = "data/settings.json";
 
 let settings;
 
@@ -19,7 +19,7 @@ export default function handler(req, res) {
     settings = { ...settings, ...newSettings };
 
     try {
-      fs.writeFileSync(filePath, JSON.stringify(settings, null, 4));
+      fs.writeFileSync(filePath, JSON.stringify(settings));
     } catch (err) {
       return res.status(500).json({ error: "Error writing to file" });
     }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 const initialState = {
+  npub: null,
   npubOrnip05Address: "",
   publicRelays: [],
 };

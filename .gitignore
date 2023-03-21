@@ -31,4 +31,4 @@ yarn-error.log*
 .vercel
 
 # Node.js temp files
-/tmp
+data/settings.json
