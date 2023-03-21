@@ -2,22 +2,33 @@ import { Fragment, useRef, useState, cloneElement, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import clsx from "clsx";
 
-import { fetchNip05Metadata, decodeNip05 } from "../services/nostr";
-import { useSettingsStore } from "../services/store";
+import {
+  fetchNip05Metadata,
+  decodeNip05,
+  sanitizeRelays,
+} from "@/services/nostr";
+import { useSettings } from "@/services/settings";
 
 export default function RelaySettingsModal({ openBtn }) {
+  const { data, post: saveSettings } = useSettings();
   // State to store modal open/close state
   const [open, setOpen] = useState(false);
   // State to store NIP-05 or npub address form field value
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(data.npubOrnip05Address);
   // State to store error message
   const [error, setError] = useState(null);
 
   const cancelButtonRef = useRef(null);
 
+  // Reset error message when modal is toggled
   useEffect(() => {
     setError(null);
   }, [open]);
+
+  // Set address to the value from settings when settings change
+  useEffect(() => {
+    setAddress(data.npubOrnip05Address);
+  }, [data.npubOrnip05Address]);
 
   const handleAddressChange = (e) => {
     setAddress(e.currentTarget.value);
@@ -32,6 +43,11 @@ export default function RelaySettingsModal({ openBtn }) {
 
     const isNpubAddress = address.startsWith("npub");
 
+    if (!isNip05Address && !isNpubAddress) {
+      setError("Invalid address");
+      return;
+    }
+
     if (isNip05Address) {
       const { localPart, domain } = decodeNip05(address);
       const metadata = await fetchNip05Metadata(localPart, domain);
@@ -43,26 +59,22 @@ export default function RelaySettingsModal({ openBtn }) {
         return;
       }
 
-      useSettingsStore.setState({ npub: npub });
-
       if (!metadata.relays[npub]) {
         setError("Relays not found");
         return;
       }
 
-      useSettingsStore.setState({ publicRelays: metadata.relays[npub] });
+      saveSettings({
+        npub: npub,
+        npubOrnip05Address: address,
+        publicRelays: sanitizeRelays(metadata.relays[npub]),
+      });
     }
 
     if (isNpubAddress) {
       //   onSubmitNpub(address);
     }
 
-    if (!isNip05Address && !isNpubAddress) {
-      setError("Invalid address");
-      return;
-    }
-
-    useSettingsStore.setState({ npubOrnip05Address: address });
     setOpen(false);
   };
 
