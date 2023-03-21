@@ -1,14 +1,16 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import fs from "fs";
 
+import { defaultSettings } from "@/config";
+
 const filePath = "data/settings.json";
 
-let settings;
+let settings = defaultSettings;
 
 try {
   settings = JSON.parse(fs.readFileSync(filePath, "utf8"));
 } catch (error) {
-  settings = {};
+  // Not settings saved yet, do nothing
 }
 
 export default function handler(req, res) {

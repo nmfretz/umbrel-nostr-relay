@@ -1,10 +1,6 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const initialState = {
-  npub: null,
-  npubOrnip05Address: "",
-  publicRelays: [],
-};
+import { defaultSettings } from "@/config";
 
 // fetch and post from API: /api/settings
 async function fetchSettings() {
@@ -21,14 +17,19 @@ async function postSettings(data) {
 }
 
 export function useSettings() {
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
-    initialData: initialState,
+    initialData: defaultSettings,
   });
-  // const [settings, setSettings] = useState(initialState);
+
   const mutation = useMutation({
     mutationFn: postSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
   });
 
   return {
