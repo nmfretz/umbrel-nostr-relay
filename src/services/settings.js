@@ -9,7 +9,7 @@ async function fetchSettings() {
   return json;
 }
 
-async function postSettings(data) {
+function postSettings(data) {
   return fetch("/api/settings", {
     method: "POST",
     body: JSON.stringify(data),
@@ -34,6 +34,6 @@ export function useSettings() {
 
   return {
     data: query.data,
-    post: mutation.mutate,
+    post: mutation.mutateAsync,
   };
 }
