@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { defaultSettings } from "@/config";
+import { defaultSettings } from "@/config.mjs";
 
 // fetch and post from API: /api/settings
 async function fetchSettings() {
