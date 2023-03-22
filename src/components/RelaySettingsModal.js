@@ -6,6 +6,7 @@ import {
   fetchNip05Metadata,
   decodeNip05,
   sanitizeRelays,
+  startRelaySync,
 } from "@/services/nostr";
 import { useSettings } from "@/services/settings";
 
@@ -74,6 +75,7 @@ export default function RelaySettingsModal({ openBtn }) {
         npubOrnip05Address: address,
         publicRelays: sanitizeRelays(metadata.relays[npub]),
       });
+      await startRelaySync();
     }
 
     if (isNpubAddress) {

@@ -53,3 +53,7 @@ export async function fetchNip05Metadata(localPart, domain) {
 
   return json;
 }
+
+export async function startRelaySync() {
+  await fetch("/relay/sync");
+}
