@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { defaultSettings } from "@/config.mjs";
-
 // fetch and post from API: /api/settings
 async function fetchSettings() {
   const response = await fetch("/api/settings");
@@ -22,7 +20,6 @@ export function useSettings() {
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
-    initialData: defaultSettings,
   });
 
   const mutation = useMutation({
@@ -33,7 +30,8 @@ export function useSettings() {
   });
 
   return {
-    data: query.data,
-    post: mutation.mutateAsync,
+    settings: query.data,
+    isLoading: query.isLoading,
+    save: mutation.mutateAsync,
   };
 }

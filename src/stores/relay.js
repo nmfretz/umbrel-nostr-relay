@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
 import { createStore } from "@/stores/createStore";
-import { useSettings } from "@/services/settings";
 import { relayPort } from "@/config.mjs";
 
 /**
@@ -39,7 +38,6 @@ const useRelayStore = createStore((set) => ({
  * @returns Relay
  */
 export function useRelay() {
-  const { data: settings } = useSettings();
   const { setStatus, setHasFetchedAllEvents, addEvent, resetEvents } =
     useRelayStore.getState();
 
@@ -120,14 +118,7 @@ export function useRelay() {
 
       socket.close();
     };
-  }, [
-    settings.publicRelays,
-    settings.pubkey,
-    setStatus,
-    setHasFetchedAllEvents,
-    addEvent,
-    resetEvents,
-  ]);
+  }, [setStatus, setHasFetchedAllEvents, addEvent, resetEvents]);
 
   return {
     events: useRelayStore((state) => state.events),
