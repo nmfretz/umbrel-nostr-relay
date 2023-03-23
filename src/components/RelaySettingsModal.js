@@ -3,7 +3,8 @@ import { Dialog, Transition } from "@headlessui/react";
 import clsx from "clsx";
 
 import {
-  fetchNip05Metadata,
+  fetchNip05Profile,
+  isValidNip05,
   decodeNip05,
   sanitizeRelays,
   startRelaySync,
@@ -42,9 +43,7 @@ export default function RelaySettingsModal({ openBtn }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const isNip05Address = address.match(
-      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
-    );
+    const isNip05Address = isValidNip05(address);
 
     const isNpubAddress = address.startsWith("npub");
 
@@ -54,26 +53,22 @@ export default function RelaySettingsModal({ openBtn }) {
     }
 
     if (isNip05Address) {
-      const { localPart, domain } = decodeNip05(address);
+      const profile = await fetchNip05Profile(address);
 
-      const metadata = await fetchNip05Metadata(localPart, domain);
-
-      const npub = metadata.names[localPart];
-
-      if (!npub) {
-        setError("Npub address not found");
+      if (!profile.pubkey) {
+        setError("Pubkey not found");
         return;
       }
 
-      if (!metadata.relays[npub]) {
+      if (!profile.relays) {
         setError("Relays not found");
         return;
       }
 
       await saveSettings({
-        npub: npub,
+        pubkey: profile.pubkey,
         npubOrnip05Address: address,
-        publicRelays: sanitizeRelays(metadata.relays[npub]),
+        publicRelays: sanitizeRelays(profile.relays),
       });
       await startRelaySync();
     }

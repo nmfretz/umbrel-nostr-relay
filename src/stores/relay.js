@@ -122,7 +122,7 @@ export function useRelay() {
     };
   }, [
     settings.publicRelays,
-    settings.npub,
+    settings.pubkey,
     setStatus,
     setHasFetchedAllEvents,
     addEvent,

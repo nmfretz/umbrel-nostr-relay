@@ -1,18 +1,14 @@
 import { uniq } from "remeda";
+import { nip05 } from "nostr-tools";
 
 /**
- * Split NIP-05 address into local part and domain. See: https://github.com/nostr-protocol/nips/blob/master/05.md#nip-05
+ * Check NIP-05 is valid. See: https://github.com/nostr-protocol/nips/blob/master/05.md#nip-05
  *
  * @param {string} nip05
- * @returns { { localPart: string, domain: string } }
+ * @returns { boolean }
  */
-export function decodeNip05(nip05) {
-  const [localPart, domain] = nip05.split("@");
-
-  return {
-    localPart,
-    domain,
-  };
+export function isValidNip05(nip05) {
+  return nip05.match(/^[a-z0-9\-_.]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/);
 }
 
 /**
@@ -41,17 +37,11 @@ export function sanitizeRelays(relayUrls) {
 /**
  * See: https://github.com/nostr-protocol/nips/blob/master/05.md
  *
- * @param {string} localPart
- * @param {string} domain
- * @returns {{"names": { string: string }, "relays": { string: string[] }}}
+ * @param {string} address
  */
-export async function fetchNip05Metadata(localPart, domain) {
-  const response = await fetch(
-    `https://${domain}/.well-known/nostr.json?name=${localPart}`,
-  );
-  const json = await response.json();
-
-  return json;
+export async function fetchNip05Profile(address) {
+  const profile = await nip05.queryProfile(address);
+  return profile;
 }
 
 export async function startRelaySync() {

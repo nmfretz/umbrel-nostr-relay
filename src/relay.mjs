@@ -24,7 +24,7 @@ class Relay {
     this.socket.onopen = () => {
       const filters = {
         // Only fetch events from the current user
-        authors: [settings.npub],
+        authors: [settings.pubkey],
       };
 
       this.socket.send(JSON.stringify(["REQ", this.subscriptionID, filters]));
