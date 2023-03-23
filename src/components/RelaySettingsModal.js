@@ -5,32 +5,36 @@ import clsx from "clsx";
 import {
   fetchNip05Profile,
   isValidNip05,
-  decodeNip05,
   sanitizeRelays,
   startRelaySync,
+  decodeNpub,
 } from "@/services/nostr";
 import { useSettings } from "@/services/settings";
+import { usePublicRelays } from "@/stores/publicRelays";
+
+import NewRelayModal from "./NewRelayModal";
+import RelaysManager from "./RelaysManager";
+import { equals } from "remeda";
 
 export default function RelaySettingsModal({ openBtn }) {
-  const { data, post: saveSettings } = useSettings();
+  const { settings = {}, save: saveSettings } = useSettings();
+  const { relays } = usePublicRelays();
   // State to store modal open/close state
   const [open, setOpen] = useState(false);
   // State to store NIP-05 or npub address form field value
-  const [address, setAddress] = useState(data.npubOrnip05Address);
+  const [address, setAddress] = useState("");
   // State to store error message
   const [error, setError] = useState(null);
 
-  const cancelButtonRef = useRef(null);
-
-  // Reset error message when modal is toggled
+  // Reset error message when modal is toggled or address changes
   useEffect(() => {
     setError(null);
-  }, [open]);
+  }, [open, address]);
 
   // Set address to the value from settings when settings change
   useEffect(() => {
-    setAddress(data.npubOrnip05Address);
-  }, [data.npubOrnip05Address]);
+    setAddress(settings.npubOrnip05Address);
+  }, [settings.npubOrnip05Address]);
 
   const handleAddressChange = (e) => {
     setAddress(e.currentTarget.value);
@@ -43,12 +47,22 @@ export default function RelaySettingsModal({ openBtn }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const relaysUrl = relays.map((r) => r.url);
     const isNip05Address = isValidNip05(address);
-
     const isNpubAddress = address.startsWith("npub");
 
     if (!isNip05Address && !isNpubAddress) {
       setError("Invalid address");
+      return;
+    }
+
+    // if address didn't change
+    if (address === settings.npubOrnip05Address) {
+      // if relays changed
+      if (!equals(relaysUrl, settings.publicRelays)) {
+        await saveSettings({ publicRelays: relaysUrl });
+      }
+      setOpen(false);
       return;
     }
 
@@ -65,18 +79,26 @@ export default function RelaySettingsModal({ openBtn }) {
         return;
       }
 
+      const relays = sanitizeRelays(profile.relays);
+
       await saveSettings({
         pubkey: profile.pubkey,
         npubOrnip05Address: address,
-        publicRelays: sanitizeRelays(profile.relays),
+        publicRelays: relays,
       });
-      await startRelaySync();
     }
 
     if (isNpubAddress) {
-      //   onSubmitNpub(address);
+      const { data } = decodeNpub(address);
+
+      await saveSettings({
+        pubkey: data,
+        npubOrnip05Address: address,
+        publicRelays: relaysUrl,
+      });
     }
 
+    await startRelaySync();
     setOpen(false);
   };
 
@@ -84,12 +106,7 @@ export default function RelaySettingsModal({ openBtn }) {
     <>
       {cloneElement(openBtn, { onClick: () => setOpen(true) })}
       <Transition.Root show={open} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          initialFocus={cancelButtonRef}
-          onClose={setOpen}
-        >
+        <Dialog as="div" className="relative z-10" onClose={setOpen}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -115,50 +132,64 @@ export default function RelaySettingsModal({ openBtn }) {
               >
                 <Dialog.Panel className="relative transform overflow-hidden col-1 md:col-span-2 xl:col-span-1 bg-white/60 dark:bg-white/5 backdrop-blur-2xl backdrop-saturate-150 shadow-xl dark:shadow-gray-900 ring-1 ring-gray-900/5 dark:ring-white/10 rounded-xl bg-white text-left transition-all sm:my-8 sm:w-full sm:max-w-lg">
                   <form onSubmit={handleSubmit}>
-                    <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                      <div className="sm:flex sm:items-start">
-                        <div className="mt-3 text-center sm:mt-0 sm:text-left ">
-                          <Dialog.Title
-                            as="h3"
-                            className="text-slate-700 dark:text-slate-50 text-xl font-semibold"
-                          >
-                            Sync to Public Relays
-                          </Dialog.Title>
-                          <div className="mt-2">
-                            <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
-                              Enter your NIP-05 or npub address to sync with
-                              your public relays.
-                            </p>
-                          </div>
-                          <input
-                            type="text"
-                            name="nip-npub-address"
-                            className={clsx(
-                              "block w-full rounded-md border-0 py-1.5 px-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6",
-                              error && "ring-red-500",
-                            )}
-                            placeholder="NIP-05 or npub address"
-                            onChange={handleAddressChange}
-                            value={address}
-                          />
-                          {error && (
-                            <p className="text-red-500 text-sm mt-2">{error}</p>
-                          )}
+                    <div className="grid grid-flow-row auto-rows-max gap-6 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                      <div className="text-center sm:text-left">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-slate-700 dark:text-slate-50 text-xl font-semibold"
+                        >
+                          Sync to Public Relays
+                        </Dialog.Title>
+                        <div className="mt-2">
+                          <p className="text-body mb-3">
+                            Enter your NIP-05 or npub address to sync with your
+                            public relays.
+                          </p>
                         </div>
+                        <input
+                          type="text"
+                          name="nip-npub-address"
+                          className={clsx(
+                            "block w-full rounded-md border-0 py-1.5 px-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6",
+                            error && "ring-red-500",
+                          )}
+                          placeholder="NIP-05 or npub address"
+                          onChange={handleAddressChange}
+                          value={address}
+                        />
+                        {error && (
+                          <p className="text-red-500 text-sm mt-2">{error}</p>
+                        )}
                       </div>
+                      {relays.length > 0 && (
+                        <div className="text-center sm:text-left text-body">
+                          <RelaysManager relays={relays} />
+                        </div>
+                      )}
                     </div>
-                    <div className="bg-white/60 dark:bg-white/5 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <div className="bg-white/60 dark:bg-white/5 px-4 py-3 flex flex-col sm:flex-row sm:px-6">
+                      <NewRelayModal
+                        openBtn={
+                          <button
+                            type="button"
+                            className="sm:mr-auto shrink-0 border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:w-auto disabled:opacity-40"
+                            disabled={!settings.npubOrnip05Address && !address}
+                          >
+                            New Relay
+                          </button>
+                        }
+                      />
                       <button
                         type="submit"
-                        className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:ml-3 sm:w-auto"
+                        className="md:order-3 mt-3 border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:ml-3 sm:mt-0 sm:w-auto disabled:opacity-40"
+                        disabled={!!error || !address}
                       >
                         Sync to Relays
                       </button>
                       <button
                         type="button"
-                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 h-10 text-sm font-semibold text-gray-900 shadow-sm ring-1 items-center ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        className="sm:ml-auto md:order-2 mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 h-10 text-sm font-semibold text-gray-900 shadow-sm ring-1 items-center ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                         onClick={handleCancel}
-                        ref={cancelButtonRef}
                       >
                         Cancel
                       </button>

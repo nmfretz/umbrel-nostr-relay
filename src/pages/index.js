@@ -92,6 +92,7 @@ const eventsToRenderLimit = 300;
 const Home = () => {
   const location = useLocation();
   const { events, status, hasFetchedAllEvents } = useRelay();
+
   // State to store the relay info as per NIP-11: https://github.com/nostr-protocol/nips/blob/master/11.md
   const [relayInformationDocument, setRelayInformationDocument] = useState({});
 
