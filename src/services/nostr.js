@@ -1,5 +1,5 @@
 import { uniq } from "remeda";
-import { nip05 } from "nostr-tools";
+import { nip05, nip19 } from "nostr-tools";
 
 /**
  * Check NIP-05 is valid. See: https://github.com/nostr-protocol/nips/blob/master/05.md#nip-05
@@ -9,6 +9,20 @@ import { nip05 } from "nostr-tools";
  */
 export function isValidNip05(nip05) {
   return nip05.match(/^[a-z0-9\-_.]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/);
+}
+
+export function isValidRelayUrl(relayUrl) {
+  try {
+    new URL(relayUrl);
+    return relayUrl.startsWith("ws://") || relayUrl.startsWith("wss://");
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
+export function decodeNpub(npub) {
+  return nip19.decode(npub);
 }
 
 /**
@@ -21,7 +35,7 @@ export function sanitizeRelays(relayUrls) {
   // Remove invalid URLs
   let sanitizedRelayUrls = relayUrls.filter((relayUrl) => {
     try {
-      new URL(relayUrl);
+      isValidRelayUrl(relayUrl);
       return true;
     } catch (e) {
       return false;
