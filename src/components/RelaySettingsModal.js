@@ -19,8 +19,9 @@ import { equals } from "remeda";
 export default function RelaySettingsModal({ openBtn }) {
   const { settings = {}, save: saveSettings } = useSettings();
   const { relays } = usePublicRelays();
+  const [isNewRelayModalOpen, setNewRelayModalOpen] = useState(false);
   // State to store modal open/close state
-  const [open, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(false);
   // State to store NIP-05 or npub address form field value
   const [address, setAddress] = useState("");
   // State to store error message
@@ -29,7 +30,7 @@ export default function RelaySettingsModal({ openBtn }) {
   // Reset error message when modal is toggled or address changes
   useEffect(() => {
     setError(null);
-  }, [open, address]);
+  }, [isOpen, address]);
 
   // Set address to the value from settings when settings change
   useEffect(() => {
@@ -42,6 +43,11 @@ export default function RelaySettingsModal({ openBtn }) {
 
   const handleCancel = () => {
     setOpen(false);
+  };
+
+  const toggleNewRelayModal = () => {
+    setNewRelayModalOpen(!isNewRelayModalOpen);
+    setOpen(!isOpen);
   };
 
   const handleSubmit = async (e) => {
@@ -105,7 +111,8 @@ export default function RelaySettingsModal({ openBtn }) {
   return (
     <>
       {cloneElement(openBtn, { onClick: () => setOpen(true) })}
-      <Transition.Root show={open} as={Fragment}>
+
+      <Transition.Root show={isOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={setOpen}>
           <Transition.Child
             as={Fragment}
@@ -168,17 +175,14 @@ export default function RelaySettingsModal({ openBtn }) {
                       )}
                     </div>
                     <div className="bg-white/60 dark:bg-white/5 px-4 py-3 flex flex-col sm:flex-row sm:px-6">
-                      <NewRelayModal
-                        openBtn={
-                          <button
-                            type="button"
-                            className="sm:mr-auto shrink-0 border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:w-auto disabled:opacity-40"
-                            disabled={!settings.npubOrnip05Address && !address}
-                          >
-                            New Relay
-                          </button>
-                        }
-                      />
+                      <button
+                        type="button"
+                        className="sm:mr-auto shrink-0 border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:w-auto disabled:opacity-40"
+                        disabled={!settings.npubOrnip05Address && !address}
+                        onClick={toggleNewRelayModal}
+                      >
+                        New Relay
+                      </button>
                       <button
                         type="submit"
                         className="md:order-3 mt-3 border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800 sm:ml-3 sm:mt-0 sm:w-auto disabled:opacity-40"
@@ -201,6 +205,10 @@ export default function RelaySettingsModal({ openBtn }) {
           </div>
         </Dialog>
       </Transition.Root>
+      <NewRelayModal
+        isOpen={isNewRelayModalOpen}
+        onClose={toggleNewRelayModal}
+      />
     </>
   );
 }

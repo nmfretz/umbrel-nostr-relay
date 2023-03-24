@@ -5,26 +5,35 @@ import clsx from "clsx";
 import { usePublicRelays } from "@/stores/publicRelays";
 import { isValidRelayUrl } from "@/services/nostr";
 
-export default function RelaySettingsModal({ openBtn }) {
+export default function RelaySettingsModal({ openBtn, isOpen, onClose }) {
   const { add: addRelay } = usePublicRelays();
   // State to store modal open/close state
-  const [open, setOpen] = useState(false);
+  const [_isOpen, setOpen] = useState(false);
   // State to store NIP-05 or npub address form field value
   const [address, setAddress] = useState("");
   // State to store error message
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    setOpen(isOpen);
+  }, [isOpen]);
+
   // Reset error message when modal is toggled or address changes
   useEffect(() => {
     setError(null);
-  }, [open, address]);
+  }, [_isOpen, address]);
+
+  const close = () => {
+    setOpen(false);
+    onClose?.();
+  };
 
   const handleAddressChange = (e) => {
     setAddress(e.currentTarget.value);
   };
 
   const handleCancel = () => {
-    setOpen(false);
+    close();
   };
 
   const handleSubmit = async (e) => {
@@ -33,7 +42,7 @@ export default function RelaySettingsModal({ openBtn }) {
 
     if (isValidRelayUrl(address)) {
       addRelay(address);
-      setOpen(false);
+      close();
     } else {
       setError("Invalid relay url");
     }
@@ -41,8 +50,8 @@ export default function RelaySettingsModal({ openBtn }) {
 
   return (
     <>
-      {cloneElement(openBtn, { onClick: () => setOpen(true) })}
-      <Transition.Root show={open} as={Fragment}>
+      {openBtn && cloneElement(openBtn, { onClick: () => setOpen(true) })}
+      <Transition.Root show={_isOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={setOpen}>
           <Transition.Child
             as={Fragment}
