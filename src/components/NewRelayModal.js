@@ -1,12 +1,15 @@
-import { Fragment, useRef, useState, cloneElement, useEffect } from "react";
+import { Fragment, useState, cloneElement, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import clsx from "clsx";
 
-import { usePublicRelays } from "@/stores/publicRelays";
 import { isValidRelayUrl } from "@/services/nostr";
 
-export default function RelaySettingsModal({ openBtn, isOpen, onClose }) {
-  const { add: addRelay } = usePublicRelays();
+export default function RelaySettingsModal({
+  openBtn,
+  isOpen,
+  onClose,
+  onAddRelay,
+}) {
   // State to store modal open/close state
   const [_isOpen, setOpen] = useState(false);
   // State to store NIP-05 or npub address form field value
@@ -16,6 +19,9 @@ export default function RelaySettingsModal({ openBtn, isOpen, onClose }) {
 
   useEffect(() => {
     setOpen(isOpen);
+    if (isOpen) {
+      setAddress("");
+    }
   }, [isOpen]);
 
   // Reset error message when modal is toggled or address changes
@@ -41,7 +47,7 @@ export default function RelaySettingsModal({ openBtn, isOpen, onClose }) {
     e.stopPropagation();
 
     if (isValidRelayUrl(address)) {
-      addRelay(address);
+      onAddRelay({ url: address });
       close();
     } else {
       setError("Invalid relay url");
@@ -52,7 +58,7 @@ export default function RelaySettingsModal({ openBtn, isOpen, onClose }) {
     <>
       {openBtn && cloneElement(openBtn, { onClick: () => setOpen(true) })}
       <Transition.Root show={_isOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={setOpen}>
+        <Dialog as="div" className="relative z-10" onClose={close}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"

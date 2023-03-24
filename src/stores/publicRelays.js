@@ -86,7 +86,13 @@ export function usePublicRelays() {
     for (const relayUrl of settings.publicRelays) {
       addRelay(relayUrl);
     }
-  }, [isLoading, settings.publicRelays, addRelay]);
+    // Remove relays that are not in settings anymore
+    for (const relay of relays) {
+      if (!settings.publicRelays.includes(relay.url)) {
+        relay.remove();
+      }
+    }
+  }, [isLoading, settings.publicRelays, addRelay, relays]);
 
   return {
     relays,

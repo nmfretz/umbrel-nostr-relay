@@ -1,6 +1,7 @@
-import { Fragment, useRef, useState, cloneElement, useEffect } from "react";
+import { Fragment, useState, cloneElement, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import clsx from "clsx";
+import { uniq } from "remeda";
 
 import {
   fetchNip05Profile,
@@ -18,7 +19,8 @@ import { equals } from "remeda";
 
 export default function RelaySettingsModal({ openBtn }) {
   const { settings = {}, save: saveSettings } = useSettings();
-  const { relays } = usePublicRelays();
+  const { relays: syncedRelays } = usePublicRelays();
+  const [relays, setRelays] = useState(syncedRelays);
   const [isNewRelayModalOpen, setNewRelayModalOpen] = useState(false);
   // State to store modal open/close state
   const [isOpen, setOpen] = useState(false);
@@ -37,12 +39,27 @@ export default function RelaySettingsModal({ openBtn }) {
     setAddress(settings.npubOrnip05Address);
   }, [settings.npubOrnip05Address]);
 
+  useEffect(() => {
+    setRelays(syncedRelays);
+  }, [syncedRelays]);
+
   const handleAddressChange = (e) => {
     setAddress(e.currentTarget.value);
   };
 
   const handleCancel = () => {
     setOpen(false);
+  };
+
+  const handleAddRelay = (relay) => {
+    setRelays((r) => [
+      ...r,
+      syncedRelays.find((s) => s.url === relay.url) || relay,
+    ]);
+  };
+
+  const handleRemoveRelay = (relay) => {
+    setRelays((relays) => relays.filter((r) => r.url !== relay.url));
   };
 
   const toggleNewRelayModal = () => {
@@ -75,13 +92,23 @@ export default function RelaySettingsModal({ openBtn }) {
         return;
       }
 
-      const relays = sanitizeRelays(profile.relays);
-
-      // if address and relays didn't change, do
+      // if address and relays didn't change, do nothing
       if (
         address === settings.npubOrnip05Address &&
-        equals(relays, relaysUrl)
+        equals(syncedRelays, relays)
       ) {
+        setOpen(false);
+        return;
+      }
+
+      if (!relays.length || !syncedRelays.length) {
+        const profileRelays = sanitizeRelays(profile.relays);
+
+        await saveSettings({
+          pubkey: profile.pubkey,
+          npubOrnip05Address: address,
+          publicRelays: uniq(relaysUrl, profileRelays),
+        });
         setOpen(false);
         return;
       }
@@ -89,7 +116,7 @@ export default function RelaySettingsModal({ openBtn }) {
       await saveSettings({
         pubkey: profile.pubkey,
         npubOrnip05Address: address,
-        publicRelays: relays,
+        publicRelays: relaysUrl,
       });
     }
 
@@ -169,7 +196,10 @@ export default function RelaySettingsModal({ openBtn }) {
                       </div>
                       {relays.length > 0 && (
                         <div className="text-center sm:text-left text-body">
-                          <RelaysManager relays={relays} />
+                          <RelaysManager
+                            relays={relays}
+                            onRemoveRelay={handleRemoveRelay}
+                          />
                         </div>
                       )}
                     </div>
@@ -207,6 +237,7 @@ export default function RelaySettingsModal({ openBtn }) {
       <NewRelayModal
         isOpen={isNewRelayModalOpen}
         onClose={toggleNewRelayModal}
+        onAddRelay={handleAddRelay}
       />
     </>
   );

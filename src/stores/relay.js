@@ -7,7 +7,7 @@ import { relayPort } from "@/config.mjs";
  * Create a Zustand store to manage relay state.
  */
 const useRelayStore = createStore((set) => ({
-  status: "disconnected",
+  status: "disconnected", // disconnected, connecting, connected
   socket: null,
   events: [],
   hasFetchedAllEvents: false,
