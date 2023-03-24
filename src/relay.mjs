@@ -39,17 +39,24 @@ export function sync() {
   }
 
   if (settings?.publicRelays) {
-    if (!relays.length) {
-      for (const relayUrl of settings.publicRelays) {
-        const relay = new Relay(relayUrl);
-        relay.connect();
-        relays.push(relay);
+    for (const relayUrl of settings.publicRelays) {
+      // Skip if relay already exists
+      if (relays.find((relay) => relay.url === relayUrl)) {
+        continue;
       }
-    } else {
-      for (const relay of relays) {
-        relay.disconnect();
-      }
+      // Add new relay and add it to the relays array
+      const relay = new Relay(relayUrl);
+      relay.connect();
+      relays.push(relay);
     }
+
+    // Remove relays that are no longer in settings
+    relays
+      .filter((relay) => !settings.publicRelays.includes(relay.socket.url))
+      .forEach((relay) => {
+        relay.disconnect();
+        relays.splice(relays.indexOf(relay), 1);
+      });
   }
 }
 
