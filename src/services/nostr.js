@@ -16,7 +16,6 @@ export function isValidRelayUrl(relayUrl) {
     new URL(relayUrl);
     return relayUrl.startsWith("ws://") || relayUrl.startsWith("wss://");
   } catch (e) {
-    console.error(e);
     return false;
   }
 }
