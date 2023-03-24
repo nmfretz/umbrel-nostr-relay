@@ -1,7 +1,7 @@
 import { Fragment, useState, cloneElement, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import clsx from "clsx";
-import { uniq } from "remeda";
+import { uniq, equals } from "remeda";
 
 import {
   fetchNip05Profile,
@@ -15,7 +15,8 @@ import { usePublicRelays } from "@/stores/publicRelays";
 
 import NewRelayModal from "./NewRelayModal";
 import RelaysManager from "./RelaysManager";
-import { equals } from "remeda";
+
+const modalAnimDuration = 200;
 
 export default function RelaySettingsModal({ openBtn }) {
   const { settings = {}, save: saveSettings } = useSettings();
@@ -40,7 +41,8 @@ export default function RelaySettingsModal({ openBtn }) {
   }, [settings.npubOrnip05Address]);
 
   useEffect(() => {
-    setRelays(syncedRelays);
+    // timeout to avoid flickering on modal close
+    setTimeout(() => setRelays(syncedRelays), modalAnimDuration);
   }, [syncedRelays]);
 
   const handleAddressChange = (e) => {
@@ -49,6 +51,8 @@ export default function RelaySettingsModal({ openBtn }) {
 
   const handleCancel = () => {
     setOpen(false);
+    // timeout to avoid flickering on modal close
+    setTimeout(() => setRelays(syncedRelays), modalAnimDuration);
   };
 
   const handleAddRelay = (relay) => {
@@ -101,13 +105,14 @@ export default function RelaySettingsModal({ openBtn }) {
         return;
       }
 
+      // if user emptied the relays or there is no relay yet, use the relays from the profile
       if (!relays.length || !syncedRelays.length) {
         const profileRelays = sanitizeRelays(profile.relays);
 
         await saveSettings({
           pubkey: profile.pubkey,
           npubOrnip05Address: address,
-          publicRelays: uniq(relaysUrl, profileRelays),
+          publicRelays: uniq([...relaysUrl, ...profileRelays]),
         });
         setOpen(false);
         return;
@@ -145,7 +150,7 @@ export default function RelaySettingsModal({ openBtn }) {
             enter="ease-out duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
-            leave="ease-in duration-200"
+            leave="ease-in duration-200" // same as modalAnimDuration variable please
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
@@ -159,7 +164,7 @@ export default function RelaySettingsModal({ openBtn }) {
                 enter="ease-out duration-300"
                 enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 enterTo="opacity-100 translate-y-0 sm:scale-100"
-                leave="ease-in duration-200"
+                leave="ease-in duration-200" // same as modalAnimDuration variable please
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
