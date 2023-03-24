@@ -62,16 +62,6 @@ export default function RelaySettingsModal({ openBtn }) {
       return;
     }
 
-    // if address didn't change
-    if (address === settings.npubOrnip05Address) {
-      // if relays changed
-      if (!equals(relaysUrl, settings.publicRelays)) {
-        await saveSettings({ publicRelays: relaysUrl });
-      }
-      setOpen(false);
-      return;
-    }
-
     if (isNip05Address) {
       const profile = await fetchNip05Profile(address);
 
@@ -86,6 +76,15 @@ export default function RelaySettingsModal({ openBtn }) {
       }
 
       const relays = sanitizeRelays(profile.relays);
+
+      // if address and relays didn't change, do
+      if (
+        address === settings.npubOrnip05Address &&
+        equals(relays, relaysUrl)
+      ) {
+        setOpen(false);
+        return;
+      }
 
       await saveSettings({
         pubkey: profile.pubkey,
