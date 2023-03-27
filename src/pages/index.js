@@ -1,14 +1,21 @@
+import Head from "next/head";
 import { useEffect, useState } from "react";
+import { uniqBy } from "remeda";
 
-import Layout from "./components/Layout";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import Layout from "@/components/Layout";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import Card from "@/components/utility/Card";
+import CopyText from "@/components/utility/CopyText";
+import ConnectClient from "@/components/ConnectClient";
+import TotalBackups from "@/components/TotalBackups";
+import LatestActions from "@/components/LatestActions";
+import RelaySettingsModal from "@/components/RelaySettingsModal";
 
-import Card from "./components/utility/Card";
-import CopyText from "./components/utility/CopyText";
-import ConnectClient from "./components/ConnectClient";
-import TotalBackups from "./components/TotalBackups";
-import LatestActions from "./components/LatestActions";
+import { useRelay } from "@/stores/relay";
+import { useLocation } from "@/utils/useLocation";
+import { relayPort } from "@/config.mjs";
+import { usePublicRelays } from "@/stores/publicRelays";
 
 // Event kinds that we want to render in the UI
 const supportedEventKinds = {
@@ -83,81 +90,25 @@ const supportedEventKinds = {
 // Total events we want to render in the activity list
 const eventsToRenderLimit = 300;
 
-const relayPort = window.location.port;
+const Home = () => {
+  const location = useLocation();
+  const { events, status, hasFetchedAllEvents } = useRelay();
+  const { relays, subscribeToUpdates, unsubscribeToUpdates } =
+    usePublicRelays();
 
-// Websocket URL of the relay
-const webSocketProtocol =
-  window.location.protocol === "https:" ? "wss:" : "ws:";
-const webSocketRelayUrl = `${webSocketProtocol}//${window.location.hostname}:${relayPort}`;
-
-// HTTP URL of the relay
-const HttpRelayUrl = `${window.location.protocol}//${window.location.hostname}:${relayPort}`;
-
-export default function App() {
-  // State to store events from websocket
-  const [events, setEvents] = useState([]);
-  // State to store the connection status of websocket
-  const [isConnected, setIsConnected] = useState(false);
-  // State to keep track of whether all stored events have been fetched
-  const [hasFetchedAllEvents, setHasFetchedAllEvents] = useState(false);
   // State to store the relay info as per NIP-11: https://github.com/nostr-protocol/nips/blob/master/11.md
   const [relayInformationDocument, setRelayInformationDocument] = useState({});
 
+  const webSocketProtocol = location?.protocol === "https:" ? "wss:" : "ws:";
+  const webSocketRelayUrl = location
+    ? `${webSocketProtocol}//${location.hostname}:${relayPort}`
+    : "";
+
   useEffect(() => {
-    // Create websocket connection
-    const socket = new WebSocket(webSocketRelayUrl);
+    if (!location) return;
 
-    // Generate a random subscription ID
-    const subscriptionID =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-
-    // Handle websocket connection open event
-    socket.onopen = () => {
-      setIsConnected(true);
-      // Reset events array to clear previous events
-      setEvents([]);
-      // Request latest 100 events
-      socket.send(JSON.stringify(["REQ", subscriptionID, { limit: 1000 }]));
-    };
-
-    // Handle websocket message event
-    socket.onmessage = (message) => {
-      // Parse the message data
-      const data = JSON.parse(message.data);
-
-      if (!data.length) {
-        console.error("Error: No data length", data);
-        return;
-      }
-
-      // Check if data is End of Stored Events Notice
-      // https://github.com/nostr-protocol/nips/blob/master/15.md
-      if (data[0] === "EOSE") {
-        setHasFetchedAllEvents(true);
-        return;
-      }
-
-      // If the data is of type EVENT
-      if (data[0] === "EVENT") {
-        // Add the event to the events array
-        setEvents((prevEvents) => {
-          // Extract the relevant data from the event
-          const { id, kind, created_at, content } = data[2];
-          return [{ id, kind, created_at, content }, ...prevEvents];
-        });
-      }
-    };
-
-    // Handle websocket error
-    socket.onerror = () => {
-      setIsConnected(false);
-    };
-
-    // Handle websocket close
-    socket.onclose = () => {
-      setIsConnected(false);
-    };
+    // HTTP URL of the relay
+    const HttpRelayUrl = `${location.protocol}//${location.hostname}:${relayPort}`;
 
     // get nostr-rs-relay version
     fetch(HttpRelayUrl, {
@@ -171,27 +122,45 @@ export default function App() {
         setRelayInformationDocument(relayInfoDoc);
       }
     });
+  }, [location]);
 
-    // Cleanup function to run on component unmount
-    return () => {
-      // Check if the websocket is open
-      if (socket.readyState === WebSocket.OPEN) {
-        // Stop previous subscription and close the websocket
-        socket.send(JSON.stringify(["CLOSE", subscriptionID]));
-        socket.close();
-      }
-    };
-  }, []);
+  useEffect(() => {
+    subscribeToUpdates();
+    return unsubscribeToUpdates;
+  }, [subscribeToUpdates, unsubscribeToUpdates]);
 
   return (
     <Layout>
+      <Head>
+        <title>Nostr Relay — Umbrel</title>
+        <meta name="description" content="Generated by create next app" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+      </Head>
       <div className="container mx-auto px-4 pb-10">
-        <Header isConnected={isConnected}>
-          <div className="relay-url-container flex self-center after:bg-white dark:after:bg-slate-900 p-3 rounded-md after:rounded-md">
-            <span className="text-sm text-slate-900 dark:text-slate-50">
-              Relay URL:&nbsp;&nbsp;
-            </span>
-            <CopyText value={webSocketRelayUrl} />
+        <Header isConnected={status === "connected"}>
+          <div className="flex flex-col space-y-2 justify-center">
+            <div className="relay-url-container shiny-border flex self-center after:bg-white dark:after:bg-slate-900 p-3 rounded-md after:rounded-md">
+              <span className="text-sm text-slate-900 dark:text-slate-50">
+                Relay URL:&nbsp;&nbsp;
+              </span>
+              <CopyText value={webSocketRelayUrl} />
+            </div>
+            <RelaySettingsModal
+              openBtn={
+                <button className="border border-violet-600/40 self-start bg-slate-900  hover:bg-slate-700 text-white text-sm h-10 px-3 rounded-md w-full flex items-center justify-center sm:w-auto dark:bg-violet-800 dark:highlight-white/20 dark:hover:from-fuchsia-600 dark:hover:to-purple-700 bg-gradient-to-br from-fuchsia-700 to-violet-800">
+                  {relays.length
+                    ? `Synced to ${
+                        relays.filter((relay) => relay.status === "connected")
+                          .length
+                      }/${relays.length} Public Relays`
+                    : "Sync to Public Relays"}
+                </button>
+              }
+            />
           </div>
         </Header>
 
@@ -252,4 +221,10 @@ export default function App() {
       </div>
     </Layout>
   );
+};
+
+export default Home;
+
+export async function getStaticProps() {
+  return { props: {} };
 }

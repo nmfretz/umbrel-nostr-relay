@@ -16,7 +16,7 @@
 }
 
 .relay-url-container::before {
-  animation: 6s rotate-shine linear infinite;
+  /* animation: 6s rotate-shine linear infinite; */
   width: 100%;
   height: 1500%;
   background: var(--tile-border);
@@ -63,4 +63,10 @@ html.dark {
     #ffffff10,
     #ffffff80
   );
+}
+
+@layer components {
+  .text-body {
+    @apply text-slate-700 dark:text-slate-300 leading-relaxed;
+  }
 }
